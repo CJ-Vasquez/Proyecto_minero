@@ -1,0 +1,94 @@
+<div class="proveedores-container">
+  <div class="header">
+    <h1>Gestión de Proveedores</h1>
+    <button class="btn-primary" (click)="abrirModalNuevo()">
+      <i class="fas fa-plus"></i> Nuevo Proveedor
+    </button>
+  </div>
+
+  <div class="filtros">
+    <input type="text" placeholder="Buscar por nombre, RUC o contacto..." [(ngModel)]="terminoBusqueda" (input)="aplicarFiltros()">
+    <select [(ngModel)]="estadoSeleccionado" (change)="aplicarFiltros()">
+      <option value="">Todos los estados</option>
+      <option *ngFor="let est of estados" [value]="est">{{ est }}</option>
+    </select>
+  </div>
+
+  <div class="tabla-container">
+    <table class="tabla-proveedores">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Razón Social</th>
+          <th>RUC</th>
+          <th>Contacto</th>
+          <th>Teléfono</th>
+          <th>Prioridad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of proveedoresFiltrados">
+          <td>{{ p.codigo }}</td>
+          <td>{{ p.razonSocial }}</td>
+          <td>{{ p.ruc }}</td>
+          <td>{{ p.nombreContacto || '-' }}</td>
+          <td>{{ p.telefono || '-' }}</td>
+          <td>
+            <span class="prioridad" [class]="getPrioridadClass(p.prioridad)">
+              {{ getPrioridadTexto(p.prioridad) }}
+            </span>
+          </td>
+          <td>
+            <span class="estado" [class.activo]="p.estado === 'ACTIVO'" [class.inactivo]="p.estado !== 'ACTIVO'">
+              {{ p.estado }}
+            </span>
+          </td>
+          <td class="acciones">
+            <button (click)="abrirModalEvaluar(p)" title="Evaluar">
+              <i class="fas fa-star"></i>
+            </button>
+            <button (click)="abrirModalEditar(p)" title="Editar">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button (click)="cambiarEstado(p)" title="Cambiar Estado">
+              <i class="fas fa-toggle-on"></i>
+            </button>
+            <button (click)="eliminarProveedor(p.id, p.razonSocial)" title="Eliminar">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="proveedoresFiltrados.length === 0">
+          <td colspan="8" class="text-center">No hay proveedores registrados</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Nuevo/Editar -->
+<div class="modal" [class.show]="mostrarModal" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editando ? 'Editar Proveedor' : 'Nuevo Proveedor' }}</h3>
+      <button class="close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" placeholder="Razón Social *" [(ngModel)]="proveedorForm.razonSocial">
+      <input type="text" placeholder="RUC *" [(ngModel)]="proveedorForm.ruc">
+      <input type="text" placeholder="Nombre Contacto" [(ngModel)]="proveedorForm.nombreContacto">
+      <input type="text" placeholder="Teléfono" [(ngModel)]="proveedorForm.telefono">
+      <input type="email" placeholder="Email" [(ngModel)]="proveedorForm.email">
+      <textarea placeholder="Dirección" [(ngModel)]="proveedorForm.direccion"></textarea>
+      <select [(ngModel)]="proveedorForm.estado">
+        <option *ngFor="let est of estados" [value]="est">{{ est }}</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" (click)="guardarProveedor()">Guardar</button>
+    </div>
+  </div>
+</div>

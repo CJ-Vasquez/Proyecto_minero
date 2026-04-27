@@ -1,0 +1,42 @@
+@startuml Diagrama de Despliegue
+title Diagrama de Despliegue - Sistema Logistico Minero
+
+node "Cliente (PC de Usuario)" {
+  artifact "Navegador\nChrome / Firefox / Edge" as BROWSER
+  artifact "SPA Angular 21\n(localhost:4200)" as SPA
+  BROWSER --> SPA
+}
+
+node "Servidor de Aplicacion\n(Spring Boot)" {
+  component "Tomcat Embebido\n(puerto 8082)" as TOMCAT
+  component "Spring Boot App\n(logistica-minero.jar)" as APP
+  component "Spring MVC\n(REST Controllers)" as MVC
+  component "Spring Security\n+ JWT + BCrypt" as SEC
+  component "Spring Data JPA\n+ Hibernate" as JPA
+  component "DataInitializer\n(migracion BCrypt)" as DI
+
+  TOMCAT --> APP
+  APP --> MVC
+  APP --> SEC
+  APP --> JPA
+  APP --> DI
+}
+
+database "MySQL 8.0" {
+  folder "Esquema:\nminero_logistica" as SCHEMA
+  artifact "11 Tablas" as TABLES
+  artifact "InnoDB Engine" as INNODB
+  SCHEMA --> TABLES
+  SCHEMA --> INNODB
+}
+
+node "Cliente API Externo" as EXT {
+  artifact "Swagger UI\n(documentacion)" as SWG
+  artifact "Postman\n(pruebas API)" as POSTMAN
+}
+
+SPA -down-> TOMCAT : HTTP/HTTPS\nJSON + JWT Bearer
+JPA -down-> SCHEMA : JDBC\n(HikariCP Pool)
+EXT -down-> TOMCAT : HTTPS + JWT
+
+@enduml

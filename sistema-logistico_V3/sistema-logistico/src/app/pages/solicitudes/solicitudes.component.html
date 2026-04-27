@@ -1,0 +1,333 @@
+<div class="page-header">
+  <div class="page-title">
+    <h1><i class="fas fa-clipboard-list"></i>Solicitudes de Pedido</h1>
+    <p>Gestión de solicitudes de compra y aprobaciones</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn-primary" (click)="abrirModalNuevo()">
+      <i class="fas fa-plus"></i> Nueva Solicitud
+    </button>
+  </div>
+</div>
+
+<div class="filters-card">
+  <div class="filters-title">
+    <i class="fas fa-filter"></i> Filtros
+  </div>
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Estado</label>
+      <select [(ngModel)]="estadoSeleccionado" (change)="aplicarFiltros()">
+        <option value="">Todos los estados</option>
+        <option *ngFor="let est of estados" [value]="est">{{ getEstadoTexto(est) }}</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn-filter" (click)="aplicarFiltros()">
+        <i class="fas fa-search"></i> Filtrar
+      </button>
+      <button class="btn-clear" (click)="limpiarFiltros()">
+        <i class="fas fa-eraser"></i> Limpiar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="cargando" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando solicitudes...</p>
+</div>
+
+<div *ngIf="!cargando" class="table-container">
+  <div class="table-responsive">
+    <table class="table-modern">
+      <thead>
+        <tr>
+          <th><i class="fas fa-hashtag"></i> N° Pedido</th>
+          <th><i class="fas fa-calendar"></i> Fecha</th>
+          <th><i class="fas fa-user"></i> Solicitante</th>
+          <th><i class="fas fa-map-marker-alt"></i> Origen</th>
+          <th><i class="fas fa-flag-checkered"></i> Estado</th>
+          <th><i class="fas fa-cogs"></i> Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of getSolicitudesPaginadas()">
+          <td><strong>{{ s.numeroPedido }}</strong></td>
+          <td>{{ s.fecha }}</td>
+          <td>{{ s.solicitante }}</td>
+          <td>{{ s.origen }}</td>
+          <td><span class="badge-status" [ngClass]="'badge-' + getEstadoClass(s.estado)">{{ getEstadoTexto(s.estado) }}</span></td>
+          <td class="action-buttons">
+            <button class="btn-icon btn-view" (click)="abrirDetalle(s)" title="Ver Detalle">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button *ngIf="s.estado === 'CREADO'" class="btn-icon btn-send" (click)="enviarAAprobacion(s.id)" title="Enviar a Aprobación">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+            <button *ngIf="s.estado === 'PENDIENTE_APROBACION' && rol === 'GERENTE'" class="btn-icon btn-approve" (click)="evaluarSolicitud(s)" title="Evaluar Solicitud">
+              <i class="fas fa-chart-line"></i>
+            </button>
+            <button *ngIf="s.estado === 'CREADO'" class="btn-icon btn-delete" (click)="eliminarSolicitud(s.id, s.numeroPedido)" title="Eliminar">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="solicitudesFiltradas.length === 0">
+          <td colspan="7" class="text-center py-4 text-muted">No hay solicitudes registradas</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="pagination-container" *ngIf="totalPaginas > 1">
+    <div class="pagination-info">
+      Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} a 
+      {{ Math.min(paginaActual * itemsPorPagina, totalRegistros) }} de {{ totalRegistros }} registros
+    </div>
+    <div class="pagination-controls">
+      <button class="btn-page" [disabled]="paginaActual === 1" (click)="cambiarPagina(paginaActual - 1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button class="btn-page" *ngFor="let p of paginas" 
+              [class.active]="paginaActual === p"
+              (click)="cambiarPagina(p)">
+        {{ p }}
+      </button>
+      <button class="btn-page" [disabled]="paginaActual === totalPaginas" (click)="cambiarPagina(paginaActual + 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA SOLICITUD -->
+<div class="modal-custom-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+  <div class="modal-custom-container modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-custom-header bg-primary text-white">
+      <h5 class="modal-custom-title">
+        <i class="fas fa-file-alt me-2"></i>Nueva Solicitud de Pedido
+      </h5>
+      <button type="button" class="modal-custom-close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-custom-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Origen</label>
+          <select class="form-select" [(ngModel)]="solicitudForm.origen">
+            <option value="MINA">Mina</option>
+            <option value="LIMA">Lima</option>
+            <option value="TRUJILLO">Trujillo</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Destino</label>
+          <select class="form-select" [(ngModel)]="solicitudForm.destino">
+            <option value="LIMA">Lima</option>
+            <option value="TRUJILLO">Trujillo</option>
+            <option value="MINA">Mina</option>
+          </select>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Solicitante <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" [(ngModel)]="solicitudForm.solicitante" placeholder="Nombre del solicitante">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Oficina</label>
+          <input type="text" class="form-control" [(ngModel)]="solicitudForm.oficina" placeholder="Oficina">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Glosa / Descripción</label>
+        <textarea class="form-control" [(ngModel)]="solicitudForm.glosa" rows="2" placeholder="Descripción..."></textarea>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Agregar Productos</h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <select class="form-select" [(ngModel)]="nuevoProducto.productoId">
+                <option [value]="0">-- Seleccione un producto --</option>
+                <option *ngFor="let p of productos" [value]="p.id">
+                  {{ p.codigo }} - {{ p.nombre }} (Stock: {{ p.stockActual }})
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <input type="number" class="form-control" [(ngModel)]="nuevoProducto.cantidad" placeholder="Cantidad">
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-success w-100" (click)="agregarProducto()">
+                <i class="fas fa-plus"></i> Agregar
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive" *ngIf="solicitudForm.detalles.length > 0">
+            <table class="table table-sm table-bordered">
+              <thead class="table-light">
+                <tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of solicitudForm.detalles; let i = index">
+                  <td>{{ item.codigoProducto }}</td>
+                  <td>{{ item.nombreProducto }}</td>
+                  <td class="text-center">{{ item.cantidadSolicitada }}</td>
+                  <td class="text-end">{{ item.precioReferencial | currency:'PEN':'symbol':'1.2-2' }}</td>
+                  <td class="text-end">{{ (item.cantidadSolicitada * item.precioReferencial) | currency:'PEN':'symbol':'1.2-2' }}</td>
+                  <td><button class="btn btn-sm btn-danger" (click)="eliminarProducto(i)"><i class="fas fa-trash"></i></button></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="table-light"><td colspan="4" class="text-end"><strong>Total:</strong></td><td colspan="2"><strong>{{ calcularTotal() | currency:'PEN':'symbol':'1.2-2' }}</strong></td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div *ngIf="solicitudForm.detalles.length === 0" class="alert alert-info text-center mb-0">
+            <i class="fas fa-box-open"></i> No hay productos agregados
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-custom-footer">
+      <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarSolicitud()" [disabled]="solicitudForm.detalles.length === 0">
+        <i class="fas fa-save me-1"></i> Guardar Solicitud
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE SOLICITUD -->
+<div class="modal-custom-overlay" *ngIf="mostrarDetalleModal" (click)="cerrarModal()">
+  <div class="modal-custom-container modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-custom-header bg-info text-white">
+      <h5 class="modal-custom-title">
+        <i class="fas fa-info-circle me-2"></i>Detalle de Solicitud
+      </h5>
+      <button type="button" class="modal-custom-close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-custom-body" *ngIf="solicitudSeleccionada">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>N° Pedido:</strong> {{ solicitudSeleccionada.numeroPedido }}</p>
+          <p><strong>Fecha:</strong> {{ solicitudSeleccionada.fecha }}</p>
+          <p><strong>Origen:</strong> {{ solicitudSeleccionada.origen }}</p>
+          <p><strong>Destino:</strong> {{ solicitudSeleccionada.destino }}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Solicitante:</strong> {{ solicitudSeleccionada.solicitante }}</p>
+          <p><strong>Oficina:</strong> {{ solicitudSeleccionada.oficina || '-' }}</p>
+          <p><strong>Estado:</strong> <span class="badge-status" [ngClass]="'badge-' + getEstadoClass(solicitudSeleccionada.estado)">{{ getEstadoTexto(solicitudSeleccionada.estado) }}</span></p>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12">
+          <p><strong>Glosa:</strong> {{ solicitudSeleccionada.glosa || '-' }}</p>
+        </div>
+      </div>
+      <h5 class="mt-3">Productos</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of solicitudSeleccionada.detalles">
+              <td>{{ d.codigoProducto }}</td>
+              <td>{{ d.nombreProducto }}</td>
+              <td class="text-center">{{ d.cantidadSolicitada }}</td>
+              <td class="text-end">{{ d.precioReferencial | currency:'PEN':'symbol':'1.2-2' }}</td>
+              <td class="text-end">{{ (d.cantidadSolicitada * d.precioReferencial) | currency:'PEN':'symbol':'1.2-2' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-light"><td colspan="4" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ calcularTotalDetalle() | currency:'PEN':'symbol':'1.2-2' }}</strong></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="modal-custom-footer">
+      <button class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EVALUACIÓN SOLICITUD -->
+<div class="modal-custom-overlay" *ngIf="mostrarModalEvaluacion" (click)="cerrarModal()">
+  <div class="modal-custom-container modal-xl" (click)="$event.stopPropagation()">
+    <div class="modal-custom-header bg-warning text-dark">
+      <h5 class="modal-custom-title">
+        <i class="fas fa-chart-line me-2"></i>Evaluar Solicitud - Stock Disponible
+      </h5>
+      <button type="button" class="modal-custom-close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-custom-body" *ngIf="solicitudEnEvaluacion">
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <div class="info-card">
+            <small>N° Pedido</small>
+            <strong>{{ solicitudEnEvaluacion.numeroPedido }}</strong>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="info-card">
+            <small>Fecha</small>
+            <strong>{{ solicitudEnEvaluacion.fecha }}</strong>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="info-card">
+            <small>Solicitante</small>
+            <strong>{{ solicitudEnEvaluacion.solicitante }}</strong>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="info-card">
+            <small>Destino</small>
+            <strong>{{ solicitudEnEvaluacion.destino }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="cargandoStock" class="text-center py-4">
+        <div class="spinner-border text-warning"></div>
+        <p>Verificando disponibilidad...</p>
+      </div>
+
+      <div *ngIf="!cargandoStock && productosEvaluados.length > 0">
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead class="table-light">
+              <tr><th>Código</th><th>Producto</th><th>Solicitado</th><th>Stock Total</th><th>Stock por Almacén</th><th>Decisión</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of productosEvaluados; let i = index">
+                <td>{{ p.codigo }}</td>
+                <td>{{ p.nombre }}</td>
+                <td class="text-center">{{ p.cantidadSolicitada }}</td>
+                <td class="text-center"><span class="badge" [ngClass]="p.suficiente ? 'bg-success' : 'bg-danger'">{{ p.stockTotal }}</span></td>
+                <td><span *ngFor="let s of p.stockPorAlmacen" class="badge bg-secondary me-1">{{ s.almacenNombre }}: {{ s.cantidad }}</span></td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn" [ngClass]="p.accion === 'TRASLADAR' ? 'btn-success' : 'btn-outline-success'" (click)="cambiarAccionProducto(i, 'TRASLADAR')">Trasladar</button>
+                    <button class="btn" [ngClass]="p.accion === 'COMPRAR' ? 'btn-primary' : 'btn-outline-primary'" (click)="cambiarAccionProducto(i, 'COMPRAR')">Comprar</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-custom-footer">
+      <button class="btn btn-danger" (click)="rechazarSolicitudConEvaluacion()">Rechazar</button>
+      <button class="btn btn-success" (click)="aprobarSolicitudConEvaluacion()">Aprobar Solicitud</button>
+    </div>
+  </div>
+</div>

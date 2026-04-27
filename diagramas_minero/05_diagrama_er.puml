@@ -1,0 +1,146 @@
+@startuml Diagrama Entidad-Relacion
+title Diagrama Entidad-Relacion - Sistema Logistico Minero
+
+!define TABLE entity
+
+hide circle
+skinparam linetype ortho
+
+entity usuarios {
+  * id : BIGINT <<PK AUTO_INCREMENT>>
+  --
+  * username : VARCHAR(50) UNIQUE
+  * password : VARCHAR(255)  (BCrypt)
+  * email : VARCHAR(255) UNIQUE
+    nombres : VARCHAR(255)
+    apellidos : VARCHAR(255)
+  * rol : VARCHAR(50)
+    activo : BOOLEAN
+    bloqueado : BOOLEAN
+    intentos_fallidos : INT
+    fecha_creacion : DATETIME
+    ultimo_acceso : DATETIME
+}
+
+entity productos {
+  * id : BIGINT <<PK>>
+  --
+    codigo : VARCHAR(50) UNIQUE
+  * nombre : VARCHAR(255)
+  * categoria : VARCHAR(255)
+  * unidad_medida : VARCHAR(255)
+    precio_referencial : DOUBLE
+    stock_minimo : INT
+    stock_actual : INT
+    stock_lima : INT
+    stock_trujillo : INT
+    stock_mina : INT
+    activo : BOOLEAN
+}
+
+entity proveedores {
+  * id : BIGINT <<PK>>
+  --
+    codigo : VARCHAR(20) UNIQUE
+  * razon_social : VARCHAR(255)
+  * ruc : VARCHAR(11) UNIQUE
+    email : VARCHAR(255)
+    telefono : VARCHAR(20)
+  * estado : VARCHAR(20)
+    prioridad : INT
+    puntaje_evaluacion : DOUBLE
+    fecha_registro : DATETIME
+}
+
+entity solicitudes_pedido {
+  * id : BIGINT <<PK>>
+  --
+  * numero_pedido : VARCHAR(50) UNIQUE
+    solicitante : VARCHAR(255)
+    oficina : VARCHAR(255)
+    destino : VARCHAR(255)
+    almacen : VARCHAR(255)
+    fecha : DATE
+  * estado : VARCHAR(50)
+    motivo_rechazo : VARCHAR(500)
+}
+
+entity detalles_pedido {
+  * id : BIGINT <<PK>>
+  --
+  # solicitud_id : BIGINT <<FK>>
+  # producto_id : BIGINT <<FK>>
+  * cantidad_solicitada : INT
+    cantidad_aprobada : INT
+    precio_referencial : DOUBLE
+}
+
+entity cotizaciones {
+  * id : BIGINT <<PK>>
+  --
+  * numero_cotizacion : VARCHAR(50) UNIQUE
+  # solicitud_id : BIGINT <<FK>>
+  # proveedor_id : BIGINT <<FK>>
+    fecha_cotizacion : DATE
+    fecha_validez : DATE
+    monto_total : DOUBLE
+  * estado : VARCHAR(50)
+}
+
+entity ordenes_compra {
+  * id : BIGINT <<PK>>
+  --
+  * numero_orden : VARCHAR(50) UNIQUE
+  # proveedor_id : BIGINT <<FK>>
+    fecha : DATE
+    monto_total : DOUBLE
+  * estado : VARCHAR(50)
+}
+
+entity recepciones {
+  * id : BIGINT <<PK>>
+  --
+  * numero_oi : VARCHAR(50) UNIQUE
+  # orden_compra_id : BIGINT <<FK>>
+    numero_guia : VARCHAR(50)
+    numero_factura : VARCHAR(50)
+    fecha_recepcion : DATETIME
+    almacen : VARCHAR(255)
+  * estado : VARCHAR(50)
+}
+
+entity kardex {
+  * id : BIGINT <<PK>>
+  --
+  # producto_id : BIGINT <<FK>>
+  * tipo : VARCHAR(20)
+    documento : VARCHAR(50)
+    numero_documento : VARCHAR(50)
+    cantidad : INT
+    saldo_anterior : INT
+    saldo_actual : INT
+    almacen : VARCHAR(255)
+    fecha_movimiento : DATETIME
+}
+
+entity auditoria {
+  * id : BIGINT <<PK>>
+  --
+    tipo_movimiento : VARCHAR(50)
+    entidad : VARCHAR(50)
+    descripcion : VARCHAR(500)
+    usuario : VARCHAR(50)
+    timestamp : DATETIME
+}
+
+' Relaciones
+solicitudes_pedido ||--o{ detalles_pedido : contiene
+productos ||--o{ detalles_pedido : incluye
+solicitudes_pedido ||--o{ cotizaciones : genera
+proveedores ||--o{ cotizaciones : cotiza
+cotizaciones ||--o| ordenes_compra : origina
+proveedores ||--o{ ordenes_compra : atiende
+ordenes_compra ||--o{ recepciones : recibida_por
+productos ||--o{ kardex : tiene_movimientos
+
+@enduml

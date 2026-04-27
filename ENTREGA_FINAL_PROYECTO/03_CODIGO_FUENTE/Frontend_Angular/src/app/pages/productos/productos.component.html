@@ -1,0 +1,88 @@
+<div class="productos-container">
+  <div class="header">
+    <h1>Gestión de Productos</h1>
+    <button class="btn-primary" (click)="abrirModalNuevo()">
+      <i class="fas fa-plus"></i> Nuevo Producto
+    </button>
+  </div>
+
+  <div class="filtros">
+    <input 
+      type="text" 
+      placeholder="Buscar por nombre o código..." 
+      [(ngModel)]="terminoBusqueda" 
+      (input)="aplicarFiltros()"
+    >
+    <select [(ngModel)]="categoriaSeleccionada" (change)="aplicarFiltros()">
+      <option value="">Todas las categorías</option>
+      <option *ngFor="let cat of categorias" [value]="cat">{{ cat }}</option>
+    </select>
+  </div>
+
+  <div class="tabla-container">
+    <table class="tabla-productos">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Categoría</th>
+          <th>Stock</th>
+          <th>Precio</th>
+          <th>Ubicación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of productosFiltrados">
+          <td>{{ p.codigo }}</td>
+          <td>{{ p.nombre }}</td>
+          <td>{{ p.categoria }}</td>
+          <td [class.stock-critico]="p.stockActual <= p.stockMinimo">
+            {{ p.stockActual }}
+          </td>
+          <td>{{ p.precioReferencial | currency:'PEN':'symbol':'1.2-2' }}</td>
+          <td>{{ p.ubicacionFisica || '-' }}</td>
+          <td class="acciones">
+            <button (click)="abrirModalStock(p)" title="Ajustar Stock">
+              <i class="fas fa-boxes"></i>
+            </button>
+            <button (click)="abrirModalEditar(p)" title="Editar">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button (click)="eliminarProducto(p.id, p.nombre)" title="Eliminar">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="productosFiltrados.length === 0">
+          <td colspan="7" class="text-center">No hay productos registrados</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Nuevo/Editar -->
+<div class="modal" [class.show]="mostrarModal" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editando ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
+      <button class="close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" placeholder="Código" [(ngModel)]="productoForm.codigo">
+      <input type="text" placeholder="Nombre" [(ngModel)]="productoForm.nombre">
+      <textarea placeholder="Descripción" [(ngModel)]="productoForm.descripcion"></textarea>
+      <select [(ngModel)]="productoForm.categoria">
+        <option *ngFor="let cat of categorias" [value]="cat">{{ cat }}</option>
+      </select>
+      <input type="number" placeholder="Precio Referencial" [(ngModel)]="productoForm.precioReferencial">
+      <input type="number" placeholder="Stock Mínimo" [(ngModel)]="productoForm.stockMinimo">
+      <input type="text" placeholder="Ubicación Física" [(ngModel)]="productoForm.ubicacionFisica">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" (click)="guardarProducto()">Guardar</button>
+    </div>
+  </div>
+</div>

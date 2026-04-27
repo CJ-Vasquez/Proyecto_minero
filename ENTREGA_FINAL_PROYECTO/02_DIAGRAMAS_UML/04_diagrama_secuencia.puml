@@ -1,0 +1,61 @@
+@startuml DIAGRAMA DE SECUENCIA
+title Diagrama de Secuencia - Login REST con JWT + BCrypt
+
+actor "Usuario" as U
+participant "Angular\nLogin Component" as NG
+participant "AuthInterceptor" as INT
+participant "AuthController" as AC
+participant "AuthService" as AS
+participant "PasswordEncoder\n(BCrypt)" as BC
+participant "UsuarioRepository" as UR
+participant "JwtTokenProvider" as JWT
+database "MySQL" as DB
+
+U -> NG : Ingresa credenciales
+NG -> NG : Valida formulario (Reactive Forms)
+NG -> INT : POST /api/auth/login\n{username, password}
+INT -> AC : HTTP Request
+AC -> AS : login(LoginRequest)
+
+AS -> UR : findByUsername(username)
+UR -> DB : SELECT * FROM usuarios
+DB --> UR : Usuario Entity
+UR --> AS : Optional<UsuarioEntity>
+
+alt Usuario no existe
+  AS --> AC : throw UnauthorizedException
+  AC --> INT : 401 Unauthorized
+  INT --> NG : SweetAlert error
+  NG --> U : "Credenciales invalidas"
+else Usuario existe
+  AS -> AS : Verificar activo + bloqueado
+  alt Usuario bloqueado o inactivo
+    AS --> AC : throw UnauthorizedException
+    AC --> INT : 401 Unauthorized
+  else Usuario activo
+    AS -> BC : matches(password, hashBD)
+    BC --> AS : true/false
+
+    alt Password incorrecto
+      AS -> AS : incrementar intentosFallidos
+      alt intentos >= 5
+        AS -> UR : save(bloqueado=true)
+      end
+      AS --> AC : throw UnauthorizedException
+    else Password correcto
+      AS -> AS : resetear intentos = 0
+      AS -> AS : setUltimoAcceso(now)
+      AS -> UR : save(usuario)
+      UR -> DB : UPDATE usuarios
+      AS -> JWT : generateToken(usuario)
+      JWT --> AS : JWT (HS512)
+      AS --> AC : LoginResponse(token, datos)
+      AC --> INT : 200 OK + token
+      INT -> INT : Guarda token en localStorage
+      INT --> NG : Navigate /dashboard
+      NG --> U : Dashboard con menu por rol
+    end
+  end
+end
+
+@enduml

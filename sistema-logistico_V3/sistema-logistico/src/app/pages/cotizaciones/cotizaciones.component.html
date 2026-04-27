@@ -1,0 +1,242 @@
+<div class="page-header">
+  <div class="page-title">
+    <h1><i class="fas fa-file-invoice-dollar"></i>Cotizaciones</h1>
+    <p>Gestión de cotizaciones, envío a proveedores y aprobaciones</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn-primary" (click)="abrirModalNuevo()">
+      <i class="fas fa-plus"></i> Nueva Cotización
+    </button>
+  </div>
+</div>
+
+<div class="filters-card">
+  <div class="filters-title">
+    <i class="fas fa-filter"></i> Filtros
+  </div>
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Estado</label>
+      <select [(ngModel)]="estadoSeleccionado" (change)="aplicarFiltros()">
+        <option value="">Todos los estados</option>
+        <option *ngFor="let est of estados" [value]="est">{{ getEstadoTexto(est) }}</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn-filter" (click)="aplicarFiltros()">
+        <i class="fas fa-search"></i> Filtrar
+      </button>
+      <button class="btn-clear" (click)="limpiarFiltros()">
+        <i class="fas fa-eraser"></i> Limpiar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="cargando" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando cotizaciones...</p>
+</div>
+
+<div *ngIf="!cargando" class="table-container">
+  <div class="table-responsive">
+    <table class="table-modern">
+      <thead>
+        <tr>
+          <th><i class="fas fa-hashtag"></i> N° Cotización</th>
+          <th><i class="fas fa-tag"></i> N° Pedido</th>
+          <th><i class="fas fa-truck"></i> Proveedor</th>
+          <th><i class="fas fa-calendar"></i> Fecha</th>
+          <th><i class="fas fa-money-bill-wave"></i> Monto</th>
+          <th><i class="fas fa-flag-checkered"></i> Estado</th>
+          <th><i class="fas fa-cogs"></i> Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of getCotizacionesPaginadas()">
+          <td><strong>{{ c.numeroCotizacion }}</strong></td>
+          <td>{{ c.numeroPedido }}</td>
+          <td>{{ c.nombreProveedor }}</td>
+          <td>{{ c.fechaCotizacion }}</td>
+          <td><span class="monto">{{ c.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</span></td>
+          <td><span class="badge-status" [ngClass]="'badge-' + getEstadoClass(c.estado)">{{ getEstadoTexto(c.estado) }}</span></td>
+          <td class="action-buttons">
+            <button class="btn-icon btn-view" (click)="abrirDetalle(c)" title="Ver Detalle">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button *ngIf="c.estado === 'PENDIENTE'" class="btn-icon btn-send" (click)="enviarAProveedor(c.id)" title="Enviar a Proveedor">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+            <button *ngIf="c.estado === 'ENVIADO'" class="btn-icon btn-edit" (click)="abrirModalRespuesta(c)" title="Registrar Respuesta">
+              <i class="fas fa-reply"></i>
+            </button>
+            <button *ngIf="c.estado === 'RESPONDIDO' && rol === 'GERENTE'" class="btn-icon btn-approve" (click)="evaluarCotizacion(c)" title="Evaluar Cotización">
+              <i class="fas fa-chart-line"></i>
+            </button>
+            <button *ngIf="c.estado === 'PENDIENTE'" class="btn-icon btn-delete" (click)="eliminarCotizacion(c.id, c.numeroCotizacion)" title="Eliminar">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+          </tr>
+          <tr *ngIf="cotizacionesFiltradas.length === 0">
+            <td colspan="7" class="text-center py-4 text-muted">No hay cotizaciones registradas</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="pagination-container" *ngIf="totalPaginas > 1">
+    <div class="pagination-info">
+      Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} a 
+      {{ Math.min(paginaActual * itemsPorPagina, totalRegistros) }} de {{ totalRegistros }} registros
+    </div>
+    <div class="pagination-controls">
+      <button class="btn-page" [disabled]="paginaActual === 1" (click)="cambiarPagina(paginaActual - 1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button class="btn-page" *ngFor="let p of paginas" 
+              [class.active]="paginaActual === p"
+              (click)="cambiarPagina(p)">
+        {{ p }}
+      </button>
+      <button class="btn-page" [disabled]="paginaActual === totalPaginas" (click)="cambiarPagina(paginaActual + 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+
+<!-- MODAL NUEVA COTIZACIÓN -->
+<div class="modal-custom-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+  <div class="modal-custom-container modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-custom-header bg-primary text-white">
+      <h5 class="modal-custom-title">
+        <i class="fas fa-file-invoice-dollar me-2"></i>Nueva Cotización
+      </h5>
+      <button type="button" class="modal-custom-close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-custom-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Solicitud de Pedido (Aprobada)</label>
+          <select class="form-select" [(ngModel)]="cotizacionForm.solicitudPedidoId" (change)="onSolicitudChange()">
+            <option [value]="0">Seleccione una solicitud</option>
+            <option *ngFor="let s of solicitudesAprobadas" [value]="s.id">{{ s.numeroPedido }} - {{ s.solicitante }}</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Proveedor</label>
+          <select class="form-select" [(ngModel)]="cotizacionForm.proveedorId">
+            <option [value]="0">Seleccione un proveedor</option>
+            <option *ngFor="let p of proveedores" [value]="p.id">{{ p.razonSocial }} (Prioridad {{ p.prioridad === 1 ? 'A' : p.prioridad === 2 ? 'B' : 'C' }})</option>
+          </select>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Fecha Cotización</label>
+          <input type="date" class="form-control" [(ngModel)]="cotizacionForm.fechaCotizacion">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Fecha Validez</label>
+          <input type="date" class="form-control" [(ngModel)]="cotizacionForm.fechaValidez">
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Productos a Cotizar</h6>
+        </div>
+        <div class="card-body">
+          <div *ngIf="cargandoDetalles" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+            <span class="ms-2">Cargando productos...</span>
+          </div>
+          <div class="table-responsive" *ngIf="!cargandoDetalles && cotizacionForm.detalles.length > 0">
+            <table class="table table-sm table-bordered">
+              <thead class="table-light">
+                <tr><th>Código</th><th>Producto</th><th class="text-center">Cantidad</th><th class="text-end">Precio Unit.</th><th class="text-end">Subtotal</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let d of cotizacionForm.detalles">
+                  <td>{{ d.codigoProducto }}</td>
+                  <td>{{ d.nombreProducto }}</td>
+                  <td class="text-center">{{ d.cantidad }}</td>
+                  <td class="text-end"><input type="number" class="form-control form-control-sm text-end" style="width: 120px;" [(ngModel)]="d.precioUnitario" (change)="actualizarSubtotal()"></td>
+                  <td class="text-end">{{ d.subtotal | currency:'PEN':'symbol':'1.2-2' }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="table-light"><td colspan="4" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ calcularTotalCotizacion() | currency:'PEN':'symbol':'1.2-2' }}</strong></td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div *ngIf="!cargandoDetalles && cotizacionForm.detalles.length === 0" class="alert alert-info text-center mb-0">
+            <i class="fas fa-box-open"></i> Seleccione una solicitud para cargar los productos
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-custom-footer">
+      <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarCotizacion()" [disabled]="cotizacionForm.detalles.length === 0">
+        <i class="fas fa-save me-1"></i> Guardar Cotización
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE COTIZACIÓN -->
+<div class="modal-custom-overlay" *ngIf="mostrarDetalleModal" (click)="cerrarModal()">
+  <div class="modal-custom-container modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-custom-header bg-info text-white">
+      <h5 class="modal-custom-title">
+        <i class="fas fa-info-circle me-2"></i>Detalle de Cotización
+      </h5>
+      <button type="button" class="modal-custom-close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-custom-body" *ngIf="cotizacionSeleccionada">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>N° Cotización:</strong> {{ cotizacionSeleccionada.numeroCotizacion }}</p>
+          <p><strong>N° Pedido:</strong> {{ cotizacionSeleccionada.numeroPedido }}</p>
+          <p><strong>Proveedor:</strong> {{ cotizacionSeleccionada.nombreProveedor }}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Fecha:</strong> {{ cotizacionSeleccionada.fechaCotizacion }}</p>
+          <p><strong>Validez:</strong> {{ cotizacionSeleccionada.fechaValidez }}</p>
+          <p><strong>Estado:</strong> <span class="badge-status" [ngClass]="'badge-' + getEstadoClass(cotizacionSeleccionada.estado)">{{ getEstadoTexto(cotizacionSeleccionada.estado) }}</span></p>
+        </div>
+      </div>
+      <div class="row mb-3" *ngIf="cotizacionSeleccionada.observaciones">
+        <div class="col-12">
+          <p><strong>Observaciones:</strong> {{ cotizacionSeleccionada.observaciones }}</p>
+        </div>
+      </div>
+      <h5 class="mt-3">Productos</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr><th>Código</th><th>Producto</th><th class="text-center">Cantidad</th><th class="text-end">Precio Unit.</th><th class="text-end">Subtotal</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of cotizacionSeleccionada.detalles">
+              <td>{{ d.codigoProducto }}</td>
+              <td>{{ d.nombreProducto }}</td>
+              <td class="text-center">{{ d.cantidad }}</td>
+              <td class="text-end">{{ d.precioUnitario | currency:'PEN':'symbol':'1.2-2' }}</td>
+              <td class="text-end">{{ d.subtotal | currency:'PEN':'symbol':'1.2-2' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-light"><td colspan="4" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ cotizacionSeleccionada.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</strong></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="modal-custom-footer">
+      <button class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+</div>

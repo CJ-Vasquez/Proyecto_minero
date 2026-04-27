@@ -1,0 +1,134 @@
+<div class="layout-container">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="sidebar-header">
+      <div class="logo" (click)="toggleSidebar()">
+        <i class="fas fa-boxes"></i>
+        <span *ngIf="!sidebarCollapsed">Sistema Logístico</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul class="nav-menu">
+        <!-- Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
+            <i class="fas fa-tachometer-alt"></i>
+            <span *ngIf="!sidebarCollapsed">Dashboard</span>
+          </a>
+        </li>
+
+        <!-- Panel Gerencial -->
+        <li class="nav-item" *ngIf="rol === 'ADMIN' || rol === 'GERENTE'">
+          <a class="nav-link" routerLink="/gerente-dashboard" routerLinkActive="active">
+            <i class="fas fa-chart-line"></i>
+            <span *ngIf="!sidebarCollapsed">Panel Gerencial</span>
+          </a>
+        </li>
+
+        <!-- Gestión Gerencial -->
+        <li class="nav-item" *ngIf="rol === 'ADMIN' || rol === 'GERENTE'">
+          <a class="nav-link" routerLink="/gerencia" routerLinkActive="active">
+            <i class="fas fa-building"></i>
+            <span *ngIf="!sidebarCollapsed">Gestión Gerencial</span>
+          </a>
+        </li>
+
+        <!-- Productos -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/productos" routerLinkActive="active">
+            <i class="fas fa-boxes"></i>
+            <span *ngIf="!sidebarCollapsed">Productos</span>
+          </a>
+        </li>
+
+        <!-- Proveedores -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/proveedores" routerLinkActive="active">
+            <i class="fas fa-truck"></i>
+            <span *ngIf="!sidebarCollapsed">Proveedores</span>
+          </a>
+        </li>
+
+        <!-- Solicitudes -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/solicitudes" routerLinkActive="active">
+            <i class="fas fa-clipboard-list"></i>
+            <span *ngIf="!sidebarCollapsed">Solicitudes</span>
+          </a>
+        </li>
+
+        <!-- Cotizaciones -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/cotizaciones" routerLinkActive="active">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span *ngIf="!sidebarCollapsed">Cotizaciones</span>
+          </a>
+        </li>
+
+        <!-- Órdenes de Compra -->
+        <li class="nav-item" *ngIf="rol === 'ADMIN' || rol === 'GERENTE'">
+          <a class="nav-link" routerLink="/ordenes-compra" routerLinkActive="active">
+            <i class="fas fa-shopping-cart"></i>
+            <span *ngIf="!sidebarCollapsed">Órdenes de Compra</span>
+          </a>
+        </li>
+
+        <!-- Recepciones -->
+        <li class="nav-item" *ngIf="rol === 'ADMIN' || rol === 'GERENTE'">
+          <a class="nav-link" routerLink="/recepciones" routerLinkActive="active">
+            <i class="fas fa-warehouse"></i>
+            <span *ngIf="!sidebarCollapsed">Recepciones</span>
+          </a>
+        </li>
+
+        <!-- Kardex -->
+        <li class="nav-item" *ngIf="rol === 'ADMIN' || rol === 'GERENTE'">
+          <a class="nav-link" routerLink="/kardex" routerLinkActive="active">
+            <i class="fas fa-chart-line"></i>
+            <span *ngIf="!sidebarCollapsed">Kardex</span>
+          </a>
+        </li>
+
+        <!-- Usuarios (solo ADMIN) -->
+        <li class="nav-item" *ngIf="rol === 'ADMIN'">
+          <a class="nav-link" routerLink="/usuarios" routerLinkActive="active">
+            <i class="fas fa-users"></i>
+            <span *ngIf="!sidebarCollapsed">Usuarios</span>
+          </a>
+        </li>
+
+        
+
+        <!-- Reportes -->
+        <li class="nav-item" *ngIf="rol === 'ADMIN'">
+          <a class="nav-link" routerLink="/reportes" routerLinkActive="active">
+            <i class="fas fa-chart-bar"></i>
+            <span *ngIf="!sidebarCollapsed">Reportes</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info" *ngIf="!sidebarCollapsed">
+        <i class="fas fa-user-circle"></i>
+        <div class="user-details">
+          <span class="user-name">{{ userName }}</span>
+          <span class="user-role">{{ rol }}</span>
+        </div>
+      </div>
+      <button class="logout-btn" (click)="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        <span *ngIf="!sidebarCollapsed">Cerrar Sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" [class.expanded]="sidebarCollapsed">
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

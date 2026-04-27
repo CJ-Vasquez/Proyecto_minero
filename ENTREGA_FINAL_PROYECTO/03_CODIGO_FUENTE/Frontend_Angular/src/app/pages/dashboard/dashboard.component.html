@@ -1,0 +1,128 @@
+<div class="dashboard-container">
+  <!-- Header con saludo -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1 class="dashboard-title">
+        <i class="fas fa-chart-line me-2"></i>Panel de Control
+      </h1>
+      <p class="dashboard-subtitle">
+        <i class="fas fa-calendar-alt me-1"></i>{{ fechaActual }}
+      </p>
+    </div>
+    <div class="header-right">
+      <div class="welcome-card">
+        <i class="fas fa-user-circle"></i>
+        <div class="welcome-text">
+          <span>Bienvenido,</span>
+          <strong>{{ userName }}</strong>
+        </div>
+      </div>
+      <button class="btn-refresh" (click)="refreshData()" title="Actualizar datos">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tarjetas KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let kpi of kpis">
+      <div class="kpi-icon" [ngClass]="'bg-' + kpi.color">
+        <i [class]="kpi.icon"></i>
+      </div>
+      <div class="kpi-content">
+        <h3>{{ kpi.value }}</h3>
+        <span>{{ kpi.label }}</span>
+      </div>
+      <div class="kpi-trend" [ngClass]="kpi.trend > 0 ? 'trend-up' : 'trend-down'">
+        <i [class]="kpi.trend > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+        <span>{{ kpi.trend > 0 ? kpi.trend : -kpi.trend }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de tendencia -->
+  <div class="chart-card">
+    <div class="card-header">
+      <h5><i class="fas fa-chart-line me-2"></i>Tendencia de Solicitudes</h5>
+      <div class="chart-controls">
+        <button class="chart-btn" [class.active]="chartPeriodo === 'semana'" (click)="cambiarPeriodo('semana')">Semana</button>
+        <button class="chart-btn" [class.active]="chartPeriodo === 'mes'" (click)="cambiarPeriodo('mes')">Mes</button>
+        <button class="chart-btn" [class.active]="chartPeriodo === 'trimestre'" (click)="cambiarPeriodo('trimestre')">Trimestre</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <canvas id="trendChart" style="height: 250px; width: 100%;"></canvas>
+    </div>
+  </div>
+
+  <!-- Tablas recientes -->
+  <div class="row">
+    <div class="col-md-6">
+      <div class="data-card">
+        <div class="card-header">
+          <h5><i class="fas fa-clipboard-list me-2"></i>Solicitudes Recientes</h5>
+          <a routerLink="/solicitudes" class="btn-link">Ver todas <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table-modern">
+              <thead>
+                <tr>
+                  <th>N° Pedido</th>
+                  <th>Solicitante</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of solicitudesRecientes">
+                  <td><strong>{{ s.numeroPedido }}</strong></td>
+                  <td>{{ s.solicitante }}</td>
+                  <td>{{ s.fecha }}</td>
+                  <td><span class="badge-status" [ngClass]="getEstadoClass(s.estado)">{{ getEstadoTexto(s.estado) }}</span></td>
+                </tr>
+                <tr *ngIf="solicitudesRecientes.length === 0">
+                  <td colspan="4" class="text-center py-4 text-muted">No hay solicitudes recientes</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6">
+      <div class="data-card">
+        <div class="card-header">
+          <h5><i class="fas fa-file-invoice-dollar me-2"></i>Cotizaciones Recientes</h5>
+          <a routerLink="/cotizaciones" class="btn-link">Ver todas <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table-modern">
+              <thead>
+                <tr>
+                  <th>N° Cotización</th>
+                  <th>Proveedor</th>
+                  <th>Fecha</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of cotizacionesRecientes">
+                  <td><strong>{{ c.numeroCotizacion }}</strong></td>
+                  <td>{{ c.nombreProveedor }}</td>
+                  <td>{{ c.fechaCotizacion }}</td>
+                  <td><span class="monto">{{ c.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</span></td>
+                </tr>
+                <tr *ngIf="cotizacionesRecientes.length === 0">
+                  <td colspan="4" class="text-center py-4 text-muted">No hay cotizaciones recientes</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

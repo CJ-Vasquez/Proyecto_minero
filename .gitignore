@@ -1,0 +1,95 @@
+# ============================================
+# Sistema Logístico Minero - .gitignore
+# ============================================
+
+# ===== Backups y archivos comprimidos =====
+*.rar
+*.zip
+*.7z
+*.tar
+*.tar.gz
+
+# ===== Sistema operativo =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# ===== IDEs =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.factorypath
+nbproject/
+.vscode/launch.json
+.vscode/settings.json
+
+# ============================================
+# BACKEND - Spring Boot / Maven
+# ============================================
+sistema-logistico-minero/sistema-logistico-minero/target/
+sistema-logistico-minero/sistema-logistico-minero/.mvn/wrapper/maven-wrapper.jar
+sistema-logistico-minero/sistema-logistico-minero/HELP.md
+
+# Java compilados y reportes
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Logs
+*.log
+logs/
+
+# ============================================
+# FRONTEND - Angular / Node
+# ============================================
+sistema-logistico_V3/sistema-logistico/node_modules/
+sistema-logistico_V3/sistema-logistico/.angular/
+sistema-logistico_V3/sistema-logistico/dist/
+sistema-logistico_V3/sistema-logistico/tmp/
+sistema-logistico_V3/sistema-logistico/out-tsc/
+sistema-logistico_V3/sistema-logistico/.nx/
+sistema-logistico_V3/sistema-logistico/coverage/
+
+# Cualquier node_modules en el repo
+**/node_modules/
+**/dist/
+**/.angular/
+
+# npm / yarn / pnpm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.yarn
+.pnp.*
+
+# ============================================
+# Variables de entorno locales
+# ============================================
+.env
+.env.local
+.env.*.local
+application-local.properties
+
+# ============================================
+# Temporales
+# ============================================
+*.tmp
+*.bak
+*.swp
+*~
+
+# Archivos personales fuera del entregable
+_archivos_personales/
+.tmp_*
+ENTREGA_FINAL/

@@ -1,0 +1,162 @@
+@startuml DIAGRAMA DE CLASES
+title Diagrama de Clases - Sistema Logistico Minero
+
+' ===== Services =====
+class AuthService {
+  - usuarioRepository: UsuarioRepository
+  - tokenProvider: JwtTokenProvider
+  - passwordEncoder: PasswordEncoder
+  + login(LoginRequest): LoginResponse
+}
+
+class UsuarioService {
+  - usuarioRepository: UsuarioRepository
+  - passwordEncoder: PasswordEncoder
+  + registrarUsuario(UsuarioRequest): UsuarioResponse
+  + listarUsuarios(): List<UsuarioResponse>
+  + actualizarUsuario(Long, UsuarioRequest): UsuarioResponse
+  + eliminarUsuario(Long): ApiResponse
+  + cambiarPassword(Long, String, String): ApiResponse
+}
+
+class ProductoService {
+  + registrarProducto(ProductoRequest): ProductoResponse
+  + listarProductos(): List<ProductoResponse>
+  + actualizarStock(Long, Integer): ProductoResponse
+  + listarStockCritico(): List<ProductoResponse>
+}
+
+class SolicitudPedidoService {
+  + crearSolicitud(SolicitudRequest): SolicitudResponse
+  + aprobarSolicitud(Long): SolicitudResponse
+  + rechazarSolicitud(Long, String): SolicitudResponse
+}
+
+class KardexService {
+  + registrarMovimiento(KardexEntity): void
+  + getHistorialByProducto(Long): List<KardexResponse>
+  + getStockActual(Long): Integer
+}
+
+' ===== Repositories =====
+interface UsuarioRepository {
+  + findByUsername(String): Optional<UsuarioEntity>
+  + existsByUsername(String): boolean
+}
+
+interface ProductoRepository {
+  + findProductosConStockCritico(): List<ProductoEntity>
+  + findByCodigo(String): Optional<ProductoEntity>
+}
+
+interface ProveedorRepository {
+  + existsByRuc(String): boolean
+  + findProveedoresPreferentes(): List<ProveedorEntity>
+}
+
+interface SolicitudPedidoRepository {
+  + findByEstado(String): List<SolicitudPedidoEntity>
+}
+
+interface KardexRepository {
+  + findByProductoId(Long): List<KardexEntity>
+}
+
+' ===== Entities =====
+class UsuarioEntity {
+  - id: Long
+  - username: String
+  - password: String
+  - email: String
+  - nombres: String
+  - apellidos: String
+  - rol: String
+  - activo: Boolean
+  - bloqueado: Boolean
+  - intentosFallidos: Integer
+}
+
+class ProductoEntity {
+  - id: Long
+  - codigo: String
+  - nombre: String
+  - categoria: String
+  - unidadMedida: String
+  - precioReferencial: Double
+  - stockActual: Integer
+  - stockMinimo: Integer
+  - stockLima: Integer
+  - stockTrujillo: Integer
+  - stockMina: Integer
+}
+
+class ProveedorEntity {
+  - id: Long
+  - codigo: String
+  - razonSocial: String
+  - ruc: String
+  - estado: String
+  - prioridad: Integer
+  - puntajeEvaluacion: Double
+}
+
+class SolicitudPedidoEntity {
+  - id: Long
+  - numeroPedido: String
+  - estado: EstadoSolicitud
+  - fecha: LocalDate
+  - solicitante: String
+  - detalles: List<DetallePedido>
+}
+
+enum EstadoSolicitud {
+  CREADO
+  PENDIENTE_APROBACION
+  APROBADO
+  RECHAZADO
+  CANCELADO
+}
+
+class CotizacionEntity {
+  - id: Long
+  - numeroCotizacion: String
+  - montoTotal: Double
+  - estado: String
+}
+
+class OrdenCompraEntity {
+  - id: Long
+  - numeroOrden: String
+  - montoTotal: Double
+  - estado: String
+}
+
+class KardexEntity {
+  - id: Long
+  - tipo: String
+  - cantidad: Integer
+  - saldoAnterior: Integer
+  - saldoActual: Integer
+  - almacen: String
+}
+
+' ===== Relaciones =====
+AuthService --> UsuarioRepository : usa
+UsuarioService --> UsuarioRepository : usa
+ProductoService --> ProductoRepository : usa
+SolicitudPedidoService --> SolicitudPedidoRepository : usa
+KardexService --> KardexRepository : usa
+
+UsuarioRepository ..> UsuarioEntity : gestiona
+ProductoRepository ..> ProductoEntity : gestiona
+ProveedorRepository ..> ProveedorEntity : gestiona
+SolicitudPedidoRepository ..> SolicitudPedidoEntity : gestiona
+KardexRepository ..> KardexEntity : gestiona
+
+SolicitudPedidoEntity --> EstadoSolicitud : tiene estado
+SolicitudPedidoEntity "1" --> "*" CotizacionEntity : genera
+CotizacionEntity "1" --> "1" OrdenCompraEntity : origina
+OrdenCompraEntity --> ProveedorEntity : con
+KardexEntity --> ProductoEntity : de
+
+@enduml

@@ -1,0 +1,108 @@
+@startuml DIAGRAMA DE ARQUITECTURA SPRING BOOT + ANGULAR
+title Arquitectura del Sistema Logistico Minero
+
+package "Frontend Layer (Angular 21)" {
+  [Angular Components] as AC
+  [Services (HTTP)] as SV
+  [Guards + Interceptor] as GI
+  [Bootstrap 5 + Chart.js] as UI
+}
+
+package "Controller Layer" {
+  [AuthController] as AUTH
+  [REST Controllers] as REST
+  [GlobalExceptionHandler] as EX
+}
+
+package "Security Layer" {
+  [Spring Security] as SS
+  [JwtAuthenticationFilter] as JWT
+  [BCryptPasswordEncoder] as BCRYPT
+  [UserDetailsServiceImpl] as UDS
+}
+
+package "Service Layer" {
+  [AuthService] as AS
+  [UsuarioService] as US
+  [ProductoService] as PS
+  [ProveedorService] as PRS
+  [SolicitudService] as SOS
+  [CotizacionService] as COS
+  [OrdenCompraService] as OCS
+  [RecepcionService] as RS
+  [KardexService] as KS
+}
+
+package "Repository Layer" {
+  [UsuarioRepository] as UR
+  [ProductoRepository] as PR
+  [ProveedorRepository] as PRR
+  [SolicitudRepository] as SOR
+  [Spring Data JPA] as JPA
+}
+
+package "Entity Layer" {
+  [Usuario] as UE
+  [Producto] as PE
+  [Proveedor] as PRE
+  [SolicitudPedido] as SE
+  [Cotizacion] as CE
+  [OrdenCompra] as OCE
+  [Recepcion] as RE
+  [Kardex] as KE
+}
+
+database "MySQL 8.0\nminero_logistica" as DB
+
+AC --> SV
+SV --> GI
+GI --> REST : HTTP + JWT
+UI --> AC
+
+REST --> AUTH
+REST --> EX
+AUTH --> SS
+SS --> JWT
+JWT --> BCRYPT
+JWT --> UDS
+
+AUTH --> AS
+REST --> US
+REST --> PS
+REST --> PRS
+REST --> SOS
+REST --> COS
+REST --> OCS
+REST --> RS
+REST --> KS
+
+AS --> UR
+US --> UR
+PS --> PR
+PRS --> PRR
+SOS --> SOR
+
+UR --> JPA
+PR --> JPA
+PRR --> JPA
+SOR --> JPA
+
+JPA --> UE
+JPA --> PE
+JPA --> PRE
+JPA --> SE
+JPA --> CE
+JPA --> OCE
+JPA --> RE
+JPA --> KE
+
+UE --> DB
+PE --> DB
+PRE --> DB
+SE --> DB
+CE --> DB
+OCE --> DB
+RE --> DB
+KE --> DB
+
+@enduml

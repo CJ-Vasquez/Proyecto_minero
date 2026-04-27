@@ -1,0 +1,308 @@
+<div class="page-header">
+  <div class="page-title">
+    <h1><i class="fas fa-shopping-cart"></i>Órdenes de Compra</h1>
+    <p>Gestión de órdenes de compra, seguimiento y recepción de mercadería</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn-primary" (click)="abrirModalNuevo()">
+      <i class="fas fa-plus"></i> Nueva Orden de Compra
+    </button>
+  </div>
+</div>
+
+<div class="filters-card">
+  <div class="filters-title">
+    <i class="fas fa-filter"></i> Filtros
+  </div>
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Estado</label>
+      <select [(ngModel)]="estadoSeleccionado" (change)="aplicarFiltros()">
+        <option value="">Todos los estados</option>
+        <option *ngFor="let est of estados" [value]="est">{{ getEstadoTexto(est) }}</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn-filter" (click)="aplicarFiltros()">
+        <i class="fas fa-search"></i> Filtrar
+      </button>
+      <button class="btn-clear" (click)="limpiarFiltros()">
+        <i class="fas fa-eraser"></i> Limpiar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="cargando" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando órdenes de compra...</p>
+</div>
+
+<div *ngIf="!cargando" class="table-container">
+  <div class="table-responsive">
+    <table class="table-modern">
+      <thead>
+        <tr>
+          <th><i class="fas fa-hashtag"></i> N° Orden</th>
+          <th><i class="fas fa-tag"></i> N° Cotización</th>
+          <th><i class="fas fa-truck"></i> Proveedor</th>
+          <th><i class="fas fa-calendar"></i> Fecha Emisión</th>
+          <th><i class="fas fa-calendar-check"></i> Fecha Entrega</th>
+          <th><i class="fas fa-money-bill-wave"></i> Monto Total</th>
+          <th><i class="fas fa-flag-checkered"></i> Estado</th>
+          <th><i class="fas fa-cogs"></i> Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let o of getOrdenesPaginadas()">
+          <td><strong>{{ o.numeroOrden }}</strong></td>
+          <td>{{ o.numeroCotizacion }}</td>
+          <td>{{ o.nombreProveedor }}</td>
+          <td>{{ o.fechaEmision }}</td>
+          <td>{{ o.fechaEntrega }}</td>
+          <td><span class="monto">{{ o.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</span></td>
+          <td><span class="badge-status" [ngClass]="'badge-' + getEstadoClass(o.estado)">{{ getEstadoTexto(o.estado) }}</span></td>
+          <td class="action-buttons">
+            <button class="btn-icon btn-view" (click)="abrirDetalle(o)" title="Ver Detalle">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button *ngIf="o.estado === 'PENDIENTE'" class="btn-icon btn-send" (click)="enviarOrden(o.id, o.numeroOrden)" title="Enviar a Proveedor">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+            <button *ngIf="o.estado === 'ENVIADA'" class="btn-icon btn-approve" (click)="recibirOrden(o.id, o.numeroOrden)" title="Recibir Orden">
+              <i class="fas fa-check-circle"></i>
+            </button>
+            <button *ngIf="o.estado !== 'RECIBIDA' && o.estado !== 'CANCELADA'" class="btn-icon btn-delete" (click)="cancelarOrden(o.id, o.numeroOrden)" title="Cancelar">
+              <i class="fas fa-ban"></i>
+            </button>
+           </td>
+          </tr>
+        <tr *ngIf="ordenesFiltradas.length === 0">
+          <td colspan="8" class="text-center py-4 text-muted">No hay órdenes de compra registradas</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="pagination-container" *ngIf="totalPaginas > 1">
+    <div class="pagination-info">
+      Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} a 
+      {{ Math.min(paginaActual * itemsPorPagina, totalRegistros) }} de {{ totalRegistros }} registros
+    </div>
+    <div class="pagination-controls">
+      <button class="btn-page" [disabled]="paginaActual === 1" (click)="cambiarPagina(paginaActual - 1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button class="btn-page" *ngFor="let p of paginas" 
+              [class.active]="paginaActual === p"
+              (click)="cambiarPagina(p)">
+        {{ p }}
+      </button>
+      <button class="btn-page" [disabled]="paginaActual === totalPaginas" (click)="cambiarPagina(paginaActual + 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+<!-- MODAL NUEVA ORDEN DE COMPRA -->
+<div class="modal-custom-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+  <div class="modal-custom-container modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-custom-header bg-primary text-white">
+      <h5 class="modal-custom-title">
+        <i class="fas fa-shopping-cart me-2"></i>Nueva Orden de Compra
+      </h5>
+      <button type="button" class="modal-custom-close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-custom-body">
+      <!-- Selección de Cotización por Código -->
+      <div class="form-group">
+        <label class="form-label">Código de Cotización</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="codigoCotizacion" 
+          (input)="buscarCotizacionPorCodigo()"
+          placeholder="Ingrese el código de cotización (ej: COT-202501001)"
+          list="cotizacionesLista">
+        <datalist id="cotizacionesLista">
+          <option *ngFor="let c of cotizacionesAprobadas" [value]="c.numeroCotizacion">
+            {{ c.numeroCotizacion }} - {{ c.nombreProveedor }}
+          </option>
+        </datalist>
+        <small class="text-muted">Escriba o seleccione el código de cotización aprobada</small>
+      </div>
+
+      <!-- Mensaje de no encontrada -->
+      <div *ngIf="busquedaRealizada && !cotizacionSeleccionada && codigoCotizacion" class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        No se encontró ninguna cotización con el código "{{ codigoCotizacion }}"
+      </div>
+
+      <!-- Información de la Cotización Seleccionada -->
+      <div *ngIf="cotizacionSeleccionada" class="cotizacion-info">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="info-card">
+              <small>N° Cotización</small>
+              <strong>{{ cotizacionSeleccionada.numeroCotizacion }}</strong>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="info-card">
+              <small>Proveedor</small>
+              <strong>{{ cotizacionSeleccionada.nombreProveedor }}</strong>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="info-card">
+              <small>Monto Total</small>
+              <strong>{{ cotizacionSeleccionada.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-6">
+            <div class="info-card">
+              <small>Fecha Cotización</small>
+              <strong>{{ cotizacionSeleccionada.fechaCotizacion }}</strong>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-card">
+              <small>Fecha Validez</small>
+              <strong>{{ cotizacionSeleccionada.fechaValidez }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos de la Orden -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Fecha de Emisión</label>
+            <input type="date" class="form-control" [(ngModel)]="ordenForm.fechaEmision" readonly>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Fecha de Entrega Estimada</label>
+            <input type="date" class="form-control" [(ngModel)]="ordenForm.fechaEntrega">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Observaciones</label>
+        <textarea class="form-control" [(ngModel)]="ordenForm.observaciones" rows="2" placeholder="Condiciones de entrega, forma de pago, etc..."></textarea>
+      </div>
+
+      <!-- Productos de la Cotización -->
+      <div class="card mt-3" *ngIf="cotizacionSeleccionada && cotizacionSeleccionada.detalles && cotizacionSeleccionada.detalles.length > 0">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Productos a Comprar</h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Código</th>
+                  <th>Producto</th>
+                  <th class="text-center">Cantidad</th>
+                  <th class="text-end">Precio Unit.</th>
+                  <th class="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let d of cotizacionSeleccionada.detalles">
+                  <td>{{ d.codigoProducto }}</td>
+                  <td>{{ d.nombreProducto }}</td>
+                  <td class="text-center">{{ d.cantidad }}</td>
+                  <td class="text-end">{{ d.precioUnitario | currency:'PEN':'symbol':'1.2-2' }}</td>
+                  <td class="text-end">{{ d.subtotal | currency:'PEN':'symbol':'1.2-2' }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="table-light">
+                  <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                  <td class="text-end"><strong>{{ cotizacionSeleccionada.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-custom-footer">
+      <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarOrden()" [disabled]="!ordenForm.cotizacionId">
+        <i class="fas fa-save me-1"></i> Generar Orden
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE ORDEN DE COMPRA -->
+<div class="modal-custom-overlay" *ngIf="mostrarDetalleModal" (click)="cerrarModal()">
+  <div class="modal-custom-container modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-custom-header bg-info text-white">
+      <h5 class="modal-custom-title">
+        <i class="fas fa-info-circle me-2"></i>Detalle de Orden de Compra
+      </h5>
+      <button type="button" class="modal-custom-close" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-custom-body" *ngIf="ordenSeleccionada">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>N° Orden:</strong> {{ ordenSeleccionada.numeroOrden }}</p>
+          <p><strong>N° Cotización:</strong> {{ ordenSeleccionada.numeroCotizacion }}</p>
+          <p><strong>Proveedor:</strong> {{ ordenSeleccionada.nombreProveedor }}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Fecha Emisión:</strong> {{ ordenSeleccionada.fechaEmision }}</p>
+          <p><strong>Fecha Entrega:</strong> {{ ordenSeleccionada.fechaEntrega }}</p>
+          <p><strong>Estado:</strong> <span class="badge-status" [ngClass]="'badge-' + getEstadoClass(ordenSeleccionada.estado)">{{ getEstadoTexto(ordenSeleccionada.estado) }}</span></p>
+        </div>
+      </div>
+      <div class="row mb-3" *ngIf="ordenSeleccionada.observaciones">
+        <div class="col-12">
+          <p><strong>Observaciones:</strong> {{ ordenSeleccionada.observaciones }}</p>
+        </div>
+      </div>
+      <h5 class="mt-3">Productos</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Código</th>
+              <th>Producto</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-end">Precio Unit.</th>
+              <th class="text-end">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of ordenSeleccionada.detalles">
+              <td>{{ d.codigoProducto }}</td>
+              <td>{{ d.nombreProducto }}</td>
+              <td class="text-center">{{ d.cantidad }}</td>
+              <td class="text-end">{{ d.precioUnitario | currency:'PEN':'symbol':'1.2-2' }}</td>
+              <td class="text-end">{{ d.subtotal | currency:'PEN':'symbol':'1.2-2' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-light">
+              <td colspan="4" class="text-end"><strong>Total:</strong></td>
+              <td class="text-end"><strong>{{ ordenSeleccionada.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="modal-custom-footer">
+      <button class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+</div>

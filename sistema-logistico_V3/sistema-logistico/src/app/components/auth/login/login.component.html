@@ -1,0 +1,87 @@
+<div class="login-wrapper">
+  <div class="login-container">
+    <div class="login-left">
+      <div class="brand">
+        <div class="logo">
+          <i class="fas fa-hard-hat"></i>
+          <span>MinaLog</span>
+        </div>
+        <h2>Sistema Logístico Minero</h2>
+        <p>Gestión integral de compras, inventarios y aprobaciones para operaciones mineras</p>
+        
+        <div class="features">
+          <div class="feature-item">
+            <i class="fas fa-check-circle"></i>
+            <span>Solicitudes de Pedido</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-check-circle"></i>
+            <span>Cotizaciones y Compras</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-check-circle"></i>
+            <span>Control de Inventario</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-check-circle"></i>
+            <span>Dashboard Gerencial</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="login-right">
+      <div class="login-card">
+        <div class="login-header">
+          <h3>Bienvenido</h3>
+          <p>Ingresa tus credenciales para acceder</p>
+        </div>
+        
+        <form (ngSubmit)="onSubmit()" class="login-form">
+          <div class="input-field">
+            <i class="fas fa-user"></i>
+            <input 
+              type="text" 
+              [(ngModel)]="username" 
+              name="username"
+              placeholder="Usuario" 
+              required
+              [class.error]="usernameError">
+          </div>
+          
+          <div class="input-field">
+            <i class="fas fa-lock"></i>
+            <input 
+              type="password" 
+              [(ngModel)]="password" 
+              name="password"
+              placeholder="Contraseña" 
+              required
+              [class.error]="passwordError">
+          </div>
+          
+          <div class="form-options">
+            <label class="checkbox">
+              <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe">
+              <span>Recordarme</span>
+            </label>
+            <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+          </div>
+          
+          <button type="submit" [disabled]="isLoading" class="btn-login">
+            <span *ngIf="!isLoading">Ingresar</span>
+            <span *ngIf="isLoading">
+              <i class="fas fa-spinner fa-spin"></i> Ingresando...
+            </span>
+          </button>
+        </form>
+        
+        <div class="login-footer">
+          <p>¿No tienes cuenta? <a href="#">Contacta al administrador</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="login-bg-pattern"></div>
+</div>

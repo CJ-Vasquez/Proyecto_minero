@@ -1,0 +1,209 @@
+<div class="page-header">
+  <div class="page-title">
+    <h1><i class="fas fa-chart-bar"></i>Reportes Ejecutivos</h1>
+    <p>Análisis y estadísticas del sistema para la toma de decisiones</p>
+  </div>
+</div>
+
+<!-- Pestañas -->
+<div class="tabs-container">
+  <button class="tab-btn" [class.active]="pestanaActiva === 'solicitudes'" (click)="pestanaActiva = 'solicitudes'">
+    <i class="fas fa-clipboard-list"></i> Solicitudes
+  </button>
+  <button class="tab-btn" [class.active]="pestanaActiva === 'compras'" (click)="pestanaActiva = 'compras'">
+    <i class="fas fa-shopping-cart"></i> Compras
+  </button>
+  <button class="tab-btn" [class.active]="pestanaActiva === 'inventario'" (click)="pestanaActiva = 'inventario'">
+    <i class="fas fa-boxes"></i> Inventario
+  </button>
+</div>
+
+<!-- REPORTE DE SOLICITUDES -->
+<div *ngIf="pestanaActiva === 'solicitudes'">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-primary">
+        <i class="fas fa-file-alt"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteSolicitudes?.total || 0 }}</h3>
+        <span>Total Solicitudes</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-success">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteSolicitudes?.aprobadas || 0 }}</h3>
+        <span>Aprobadas</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-danger">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteSolicitudes?.rechazadas || 0 }}</h3>
+        <span>Rechazadas</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-warning">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteSolicitudes?.pendientes || 0 }}</h3>
+        <span>Pendientes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h6><i class="fas fa-chart-line"></i> Solicitudes por Mes</h6>
+      <div class="card-actions">
+        <button class="btn-excel-sm" (click)="exportarExcelSolicitudes()">
+          <i class="fas fa-file-excel"></i> Excel
+        </button>
+        <button class="btn-pdf-sm" (click)="exportarPDFSolicitudes()">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table-modern">
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th class="text-center">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of reporteSolicitudes?.porMes || []">
+              <td>{{ item.mes }}</td>
+              <td class="text-center">{{ item.cantidad }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORTE DE COMPRAS -->
+<div *ngIf="pestanaActiva === 'compras'">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-primary">
+        <i class="fas fa-shopping-cart"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteCompras?.totalCompras || 0 }}</h3>
+        <span>Total Compras</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-success">
+        <i class="fas fa-money-bill-wave"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteCompras?.montoTotal | currency:'PEN':'symbol':'1.2-2' }}</h3>
+        <span>Monto Total</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h6><i class="fas fa-chart-bar"></i> Compras por Proveedor</h6>
+      <div class="card-actions">
+        <button class="btn-excel-sm" (click)="exportarExcelCompras()">
+          <i class="fas fa-file-excel"></i> Excel
+        </button>
+        <button class="btn-pdf-sm" (click)="exportarPDFCompras()">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table-modern">
+          <thead>
+            <tr>
+              <th>Proveedor</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-end">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of reporteCompras?.porProveedor || []">
+              <td>{{ item.proveedor }}</td>
+              <td class="text-center">{{ item.cantidad }}</td>
+              <td class="text-end">{{ item.monto | currency:'PEN':'symbol':'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORTE DE INVENTARIO -->
+<div *ngIf="pestanaActiva === 'inventario'">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-primary">
+        <i class="fas fa-boxes"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteInventario?.totalProductos || 0 }}</h3>
+        <span>Total Productos</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-success">
+        <i class="fas fa-dollar-sign"></i>
+      </div>
+      <div class="stat-info">
+        <h3>{{ reporteInventario?.valorTotal | currency:'PEN':'symbol':'1.2-2' }}</h3>
+        <span>Valor Total</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h6><i class="fas fa-exclamation-triangle"></i> Productos con Bajo Stock</h6>
+      <div class="card-actions">
+        <button class="btn-excel-sm" (click)="exportarExcelInventario()">
+          <i class="fas fa-file-excel"></i> Excel
+        </button>
+        <button class="btn-pdf-sm" (click)="exportarPDFInventario()">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table-modern">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th class="text-center">Stock Actual</th>
+              <th class="text-center">Stock Mínimo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of reporteInventario?.productosBajoStock || []">
+              <td>{{ item.producto }}</td>
+              <td class="text-center text-danger">{{ item.stock }}</td>
+              <td class="text-center">{{ item.minimo }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

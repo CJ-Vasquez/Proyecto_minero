@@ -1,0 +1,52 @@
+@startuml DIAGRAMA DE CASOS DE USO
+left to right direction
+title Casos de Uso - Sistema Logistico Minero
+
+actor "Administrador" as ADMIN
+actor "Gerente" as GER
+actor "Jefe Almacen" as JEFE
+actor "Asistente Compras" as COMP
+actor "Asistente Almacen" as ALM
+
+rectangle "Sistema Logistico Minero" {
+  usecase "UC-01\nLogin REST\n(JWT + BCrypt)" as UC01
+  usecase "UC-02\nGestionar\nUsuarios" as UC02
+  usecase "UC-03\nGestionar\nProductos" as UC03
+  usecase "UC-04\nGestionar\nProveedores" as UC04
+  usecase "UC-05\nRegistrar\nSolicitud" as UC05
+  usecase "UC-06\nAprobar\nSolicitud" as UC06
+  usecase "UC-07\nGenerar\nCotizacion" as UC07
+  usecase "UC-08\nCrear Orden\nde Compra" as UC08
+  usecase "UC-09\nRegistrar\nRecepcion" as UC09
+  usecase "UC-10\nConsultar\nKardex FIFO" as UC10
+  usecase "UC-11\nExportar\nReporte PDF/Excel" as UC11
+  usecase "UC-12\nVer Dashboard\nGerencial" as UC12
+}
+
+ADMIN --> UC01
+ADMIN --> UC02
+ADMIN --> UC03
+ADMIN --> UC04
+ADMIN --> UC11
+ADMIN --> UC12
+
+GER --> UC01
+GER --> UC06
+GER --> UC11
+GER --> UC12
+
+JEFE --> UC01
+JEFE --> UC09
+JEFE --> UC10
+
+COMP --> UC01
+COMP --> UC04
+COMP --> UC07
+COMP --> UC08
+
+ALM --> UC01
+ALM --> UC05
+ALM --> UC09
+ALM --> UC10
+
+@enduml
